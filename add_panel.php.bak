@@ -1,0 +1,228 @@
+<?php
+  $page_title = 'Add User';
+  require_once('includes/load.php');
+  // Checkin What level user has permission to view this page
+  page_require_level(2);
+  $groups = find_all('user_groups');
+  
+  function validating($phone){
+	if(preg_match('/^[0-9]{10}+$/', $phone)) {
+		echo " Valid Phone Number";
+	} else {
+		echo " Invalid Phone Number";
+	}
+  }
+?>
+<script type="text/javascript">
+    function readURL(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+
+            reader.onload = function (e) {
+                $('#blah').attr('src', e.target.result);
+            }
+
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+</script>
+<?php
+  if(isset($_POST['add_user'])){
+
+   $req_fields = array('full-name','designation','nic','email' );
+   validate_fields($req_fields);   
+    
+  $name = $_FILES['file']['name'];
+  $target_dir = "uploads/";
+  $target_file = $target_dir.basename($_FILES["file"]["name"]);
+
+  // Select file type
+  $imageFileType = strtolower(pathinfo($target_file,PATHINFO_EXTENSION));
+
+  // Valid file extensions
+  $extensions_arr = array("jpg","jpeg","png","gif");  
+   
+   /*   
+   INSERT INTO `panel_member`(`id`, `member_name`, `designation`, `nic`, `work_place`, `email`, `photo`, `status`, `created`, `updated`) VALUES ('[value-1]','[value-2]','[value-3]','[value-4]','[value-5]','[value-6]','[value-7]','[value-8]','[value-9]','[value-10]')
+   */
+
+   if(empty($errors)){
+       $member_name   = remove_junk($db->escape($_POST['full-name']));
+	   $designation   = remove_junk($db->escape($_POST['designation']));
+	   $nic   = remove_junk($db->escape($_POST['nic']));
+	   $work_place   = remove_junk($db->escape($_POST['work_place']));
+	   $email   = remove_junk($db->escape($_POST['email']));	   
+	   $status = remove_junk($db->escape($_POST['status']));
+	   
+	   $P_data=findByNIC($nic,$status);
+		
+		
+		$home= remove_junk($db->escape($_POST['hm_tp']));
+		$mobile= remove_junk($db->escape($_POST['mobile_no']));
+		
+		/*********************************************************************/
+		/**
+		Upload Image File
+		**/
+		$filename = $_FILES["choosefile"]["name"];
+		$tempname = $_FILES["choosefile"]["tmp_name"];  
+        $folder = "uploads/".$filename;
+		
+		$filename_without_ext = substr($filename, 0, strrpos($filename, "."));
+		
+		//Change File Name
+		/*$temp = explode(".", $_FILES["choosefile"]["name"]);
+		$newfilename = round(microtime(true)) . '.' . end($temp);
+		move_uploaded_file($_FILES["choosefile"]["tmp_name"], "uploads/" . $newfilename);
+		*/
+		
+		if(($P_data != null)) {	
+			$session->msg('d',' Sorry failed to create account!'.$P_data);
+			redirect('add_panel.php', false);
+		}
+		
+		$ext = pathinfo($filename, PATHINFO_EXTENSION);
+		if(!in_array($ext,$extensions_arr) ) {
+			$imageError = "jpg/jpeg/png/gif image types only";
+			$session->msg('d','Image Upload ERROR : ' .$imageError);
+			redirect('add_panel.php', false);
+		}
+		
+		 // Add the image to the "image" folder"
+		if($filename_without_ext == $nic){
+        if (move_uploaded_file($tempname, $folder)) {
+            $msg = "Image uploaded successfully";
+        }else{
+            $msg = "Failed to upload image";
+		}
+		
+		/*********************************************************************/
+		
+	    date_default_timezone_set('Asia/Colombo');	   
+	    $current_date = date('Y-m-d H:i:s');
+
+       
+        $query = "INSERT INTO panel_member (";
+        $query .="member_name,designation,nic,work_place,email,photo,status,created";
+        $query .=") VALUES (";
+        $query .=" '{$member_name}','{$designation}','{$nic}','{$work_place}', '{$email}','{$filename}','{$status}','{$current_date}'";
+        $query .=");";
+		
+			
+        if($db->query($query)){		
+			$p_id=find_panel_id_by_nic("panel_member",$nic);
+			$p=$p_id['id'];			
+			$query2 = " INSERT INTO contact_number (`contact_type`, `contact_number`,`panel_member_id`,  `created`) VALUES (";
+			$query2 .=" 'home','{$home}','{$p}','{$current_date}');";		
+		
+			if($db->query($query2)){
+				$query3 .= " INSERT INTO contact_number (`contact_type`, `contact_number`, `panel_member_id`, `created`) VALUES (";
+				$query3 .=" 'mobile','{$mobile}','{$p}','{$current_date}');";
+				if($db->query($query3)){
+					date_default_timezone_set('Asia/Kolkata');
+					$log_time = date('Y-m-d h:i:sa');	
+					$user = current_user();	
+					//Insert access log message
+					$log_msg = "Panel Member has been created with NIC NO ".$nic ." by " . remove_junk(ucfirst($user['name']))." at ".$log_time;
+					
+					wh_log($log_msg);
+					//sucess		
+					$session->msg('s',"Panel Member has been created!");
+					redirect('add_panel.php', false);
+					
+					
+				}					
+			} else {
+			  //failed
+			  $session->msg('d',' Sorry failed to create account!');
+			  redirect('add_panel.php', false);
+			}			
+        } else {
+          //failed
+          $session->msg('d',' Sorry failed to create account!');
+          redirect('add_panel.php', false);
+        }
+		}else{
+			 $session->msg('d',' Invalid Image Name.Image Name should match with the NIC! '.$filename_without_ext);
+			redirect('add_panel.php', false);
+		}
+			
+   } else {
+     $session->msg("d", $errors);
+      redirect('add_panel.php',false);
+   }
+ }
+?>
+<?php include_once('layouts/header.php'); ?>
+  <?php echo display_msg($msg); ?>
+  <div class="row">
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <strong>
+          <span class="glyphicon glyphicon-th"></span>
+          <span>Panel Member Registration</span>
+       </strong>
+      </div>
+      <div class="panel-body">
+	  <form action="add_panel.php" method = "POST" enctype = "multipart/form-data">
+        <div class="col-md-6">
+          
+            <div class="form-group">
+                <label for="member_name">Full Name</label>
+                <input type="text" class="form-control" name="full-name" placeholder="Full Name">
+            </div>
+            <div class="form-group">
+                <label for="nic">NIC</label>
+                <input type="text" class="form-control" name="nic" placeholder="NIC" onKeyPress="if(this.value.length==12) return false;">
+            </div>
+            
+            
+			<div class="form-group">
+              <label for="hm_tp">Home Telephone No</label>
+                 <input class="form-control" name="hm_tp" placeholder="Home Telephone"  type="number" onKeyPress="if(this.value.length==10) return false;">
+            </div>
+			
+			<div class="form-group">
+              <label for="email">Email</label>
+                 <input type="email" required class="form-control" name="email" placeholder="Email" onKeyPress="email_validation(this.value);">
+            </div>
+			<div class="form-group">
+              <label for="photo">Profile Image</label> 
+			<input type="file" name="choosefile" value="" style=" border: 1px solid blue;backgroundColor:gray;" onchange="readURL(this);" />
+			<img id="blah" src="#" alt="your image" />
+            </div>
+            <div class="form-group clearfix">
+              <button type="submit" name="add_user" class="btn btn-primary">Add User</button>
+            </div>
+
+        </div>
+		
+		 <div class="col-md-6">
+            <div class="form-group">
+                <label for="designation">Current Designation</label>
+                <input type="text" class="form-control" name ="designation"  placeholder="Designation">
+            </div>
+            <div class="form-group">
+              <label for="work_place">Working Place</label>
+                 <input type="text" class="form-control" name="work_place" placeholder="Working Place">
+            </div>
+			<div class="form-group">
+              <label for="mobile_no">Mobile No</label>
+                 <input class="form-control" name="mobile_no" placeholder="Mobile No"  type="number" onKeyPress="if(this.value.length==10) return false;" >
+            </div>
+			<div class="form-group">              			   
+			   <label for="status">Status</label>
+            <select class="form-control" name="status">
+              <option value="1">Active</option>
+              <option value="0">Deactive</option>
+            </select>
+            </div>
+            
+        </div>
+        </form>
+      </div>
+
+    </div>
+  </div>
+
+<?php include_once('layouts/footer.php'); ?>

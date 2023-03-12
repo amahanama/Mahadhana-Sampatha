@@ -1,0 +1,24 @@
+<?php
+  
+require_once('includes/load.php');
+
+	$mode = $_POST['mode'];
+
+	$sql  = " SELECT  panel_1, panel_2, panel_3, panel_4, panel_5 ";
+    $sql .= " FROM draw_allocation ";
+	$sql .= " WHERE  draw_no=(SELECT MAX(draw_no) FROM draw_allocation) AND status='Y' AND mode='$mode'";
+	
+	$result = mysqli_query($conn, $sql);
+	$msg ='';
+	
+	if (mysqli_num_rows($result) > 0){
+		while ($row = mysqli_fetch_array($result))
+		{
+	   $msg =.'<option value="'. $row["panel_1"] .'">'. $row["panel_1"] .'</option>';
+		}
+	}
+	else{$msg .="No categories were found!";}
+	echo $msg;
+	mysqli_close($conn);
+
+?>

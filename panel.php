@@ -1,0 +1,62 @@
+<?php
+$page_title = 'Sale Report';
+  require_once('includes/load.php');
+  // Checkin What level user has permission to view this page
+  page_require_level(3);   
+
+?>
+<?php include_once('layouts/header.php'); ?>
+<div class="row">
+  <div class="col-md-6">
+    <?php echo display_msg($msg); ?>
+  </div>
+</div>
+<div class="row">
+  <div class="col-md-12">
+    <div class="panel">
+      <div class="panel-heading">
+		<h3>Search Panel Member</h3>
+      </div>
+      <div class="panel-body">
+          <form class="clearfix" method="post" action="detail_report_process.php">           
+			
+			<div class="form-group">
+			
+			<div class="row">			
+                 <div class="col-md-6">
+				  <b>NIC</b>
+				  <input type="text" id="sug_nic" class="form-control" name="sug_nic"  placeholder="Enter NIC">
+				</div>
+				
+				<div class="col-md-6">
+				   <b>Name </b>
+				  <input type="text" id="sug_name" class="form-control" name="sug_name"  placeholder="Enter Name">
+				</div>
+					
+				
+				
+			</div>
+			<div class="row" style="padding-top:10px;">	
+				<div class="col-md-6">				 
+                   <b>Mobile No </b>				  
+				  <input type="text" id="sug_mob" class="form-control" name="sug_mob"  placeholder="Enter Mobile">
+				</div>
+				<div class="col-md-6">	
+				<label for="status"><b>Status</b></label>
+				<select class="form-control" name="status">
+					<option value="1">Active</option>
+					<option value="0">Inactive</option>
+				</select>
+				</div>
+			</div>
+				
+            </div>
+            <div class="form-group">			
+                 <button type="submit" name="submit" class="btn btn-primary">Search</button>				 
+            </div>
+          </form>
+      </div>
+    </div>
+  </div>
+</div>
+<?php include_once('layouts/footer.php'); ?>

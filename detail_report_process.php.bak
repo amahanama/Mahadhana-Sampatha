@@ -1,0 +1,221 @@
+<?php error_reporting (E_ALL ^ E_NOTICE); ?> 
+<?php
+$page_title = 'Sales Report';
+$results = '';
+  require_once('includes/load.php');
+  // Checkin What level user has permission to view this page
+  // page_require_level(3);
+  // page_require_level(4);
+?>
+
+<?php
+  if(isset($_POST['submit'])){
+    //$req_dates = array('start-date','end-date');
+    //validate_fields($req_dates);
+
+    if(empty($errors)):
+     
+	 $nic   = remove_junk($db->escape($_POST['sug_nic']));	 
+	 $mob   = remove_junk($db->escape($_POST['sug_mob']));	
+	 $name  = remove_junk($db->escape($_POST['sug_name']));		 
+	 $status =remove_junk($db->escape($_POST['status']));
+	 	 
+	// if($start_date != "" && $end_date != "" && $p_cat == 0 && $p_div == 0 && $p_status == 0 && $user_list == 0)
+		
+	if($nic != "" && $mob == "" && $name == ""):	
+     $results      = findByNIC($nic,$status);	
+	 endif;
+	 
+	 if($mob != "" && $nic == "" && $name == ""):	
+     $results      = findByMob($mob,$status);	
+	 endif;
+	 
+	 if($nic != "" && $mob != "" && $name == ""):	
+     $results      = findByNICMob($nic,$mob,$status);	
+	 endif;
+	 
+	 if($nic == "" &&  $mob == "" && $name == ""):	
+     $results      = join_panel_table($status);	
+	 endif;
+	 
+	 if($nic == "" &&  $mob == "" && $name != ""):	
+     $results      = findByName($name,$status);	
+	 endif;
+	 
+	 if($nic != "" &&  $mob == "" && $name != ""):	
+     $results      = findByNicName($name,$nic,$status);	
+	 endif;
+	 
+	 if($nic != "" &&  $mob != "" && $name != ""):	
+     $results      = findByNicNameMob($name,$nic,$mob,$status);	
+	 endif;
+	 
+	   
+    else:
+      $session->msg("d", $errors);
+      redirect('panel.php', false);
+    endif;
+
+  } else {
+    $session->msg("d", "Select dates");
+    redirect('panel.php', false);
+  }
+?>
+<!doctype html>
+<html lang="en-US">
+ <head>
+   <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+   <title>Default Page Title</title>
+     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.4/css/bootstrap.min.css"/>
+   <style>
+   @media print {
+     html,body{
+        font-size: 9.5pt;
+        margin: 0;
+        padding: 0;
+     }.page-break {
+       page-break-before:always;
+       width: auto;
+       margin: auto;
+      }
+    }
+    .page-break{
+      width: 980px;
+      margin: 0 auto;
+    }
+     .sale-head{
+       margin: 100px 0;
+       text-align: center;
+     }.sale-head h1,.sale-head strong{
+       padding: 10px 20px;
+       display: block;
+     }.sale-head h1{
+       margin: 0;
+       border-bottom: 1px solid #212121;
+     }.table>thead:first-child>tr:first-child>th{
+       border-top: 1px solid #000;
+      }
+      table thead tr th {
+       text-align: center;
+       border: 1px solid #000;
+     }table tbody tr td{
+       vertical-align: middle;
+	    padding: 10px;
+     }.sale-head,table.table thead tr th,table tbody tr td,table tfoot tr td{
+       border: 1px solid #212121;       
+     }.sale-head h1,table thead tr th,table tfoot tr td{
+       background-color: #f8f8f8;
+     }tfoot{
+       color:#000;
+       text-transform: uppercase;
+       font-weight: 500;
+     }
+	 .center {
+		  margin-left: 20px;
+		  margin-right: 10px;
+	}
+	
+   </style>
+</head>
+<body>
+  
+  <?php if($results): ?>
+    <div>
+       <div style="text-align:center;padding-bottom:50px;">
+           <h1 >Sasiri Panel Member List</h1>           
+       </div>
+	   
+	   <div style="overflow-y:scroll;" >
+      <table class="center" style="width:95%;align:center; padding-left:5px;padding-right:5px;" id="panel_table" name="panel_table">
+        <thead>
+          <tr>
+			  <th class="text-center" >#</th>
+                <th> Name</th>
+                <th> Designation </th>
+                <th > NIC </th>
+                <th > Work Place </th>
+                <th> Email </th>
+                <th style="display:none"> Photo </th>
+				<th > Mobile No </th>
+				<th > Home No </th>
+                <th style="display:none"> Status </th>
+                <th> Actions </th>	  
+			  
+          </tr>
+        </thead>
+		
+        <tbody>
+		<?php $count=1 ?>
+		<?php foreach($results as $result): ?>
+		  <tr>	 
+			  <td class="text-center"><?php echo count_id();?></td>                
+                <td> <?php echo remove_junk($result['member_name']); ?></td>
+                <td> <?php echo remove_junk($result['designation']); ?></td>
+                <td> <?php echo remove_junk($result['nic']); ?></td>
+                <td> <?php echo remove_junk($result['work_place']); ?></td>
+				<td> <?php echo remove_junk($result['email']); ?></td>
+                
+				
+				<td style="display:none">
+                  <?php if($result['photo'] === '0'): ?>
+                    <img class="img-avatar img-circle" src="uploads/products/no_image.png" alt="">
+                  <?php else: ?>
+                  <img class="img-avatar img-circle" src="uploads/products/<?php echo $result['image']; ?>" alt="">
+                <?php endif; ?>
+                </td>
+				<td> <?php echo remove_junk($result['mob']); ?></td>
+				<td> <?php echo remove_junk($result['home']); ?></td>
+				
+                <td style="display:none"> <?php echo remove_junk($result['status']); ?></td>
+                <td>
+                  <div class="btn-group">
+                    <a href="edit_panel.php?id=<?php echo (int)$result['id'];?>" class="btn btn-info btn-xs"  title="Edit" data-toggle="tooltip">
+                      <span class="glyphicon glyphicon-edit"></span>
+                    </a>
+                    
+                  </div>
+                </td>				  
+          </tr>
+        <?php endforeach; ?>
+        </tbody>        
+      </table>
+	  
+	
+    
+	<div style="padding-top:20px; padding-left:80px; padding-bottom:40px;">
+	<!--<input type="button" name="create_excel" id="create_excel" value="Download Report" onclick="exportReportToExcel();"/>
+	-->
+	<button onclick="window.location.href='home.php'" style=" font-size: 18px;background-color: #16A085; width:200px;">Home</button>
+	<button onclick="ExportToExcel('xlsx')" style=" font-size: 18px;background-color: #48C9B0;width:200px;">Export to excel</button>
+	
+	</div>
+	</div>
+	</div>
+  <?php
+    else:
+	
+        $session->msg("d", "Sorry no records has been found. ".$on_loan);
+		 
+        redirect('panel.php', false);
+     endif;
+  ?>
+</body>
+<script type="text/javascript" src="https://unpkg.com/xlsx@0.15.1/dist/xlsx.full.min.js"></script>
+<script>  
+ /*$(document).ready(function(){  
+      $('#create_excel').click(function(){  
+           var excel_data = $('#panel_table').html();  
+           var page = "excel.php?data=" + excel_data;  
+           window.location = page;  
+      });  
+ }); */
+function ExportToExcel(type, fn, dl) {
+       var elt = document.getElementById('panel_table');
+       var wb = XLSX.utils.table_to_book(elt, { sheet: "sheet1" });
+       return dl ?
+         XLSX.write(wb, { bookType: type, bookSST: true, type: 'base64' }):
+         XLSX.writeFile(wb, fn || ('PANEL_LIST.' + (type || 'xlsx')));
+    }
+ </script>  
+</html>
+<?php if(isset($db)) { $db->db_disconnect(); } ?>

@@ -1,0 +1,376 @@
+<?php
+  $page_title = 'Edit Group';
+  require_once('includes/load.php');
+  // Checkin What level user has permission to view this page
+   page_require_level(3); 
+?>
+<?php
+	$all_categories = find_all('lotteries');
+    $p_allocation = find_by_id('draw_allocation',(int)$_GET['id']);
+    $mode=$p_allocation['mode'];
+
+	  $p1=find_panel_allocation_by_id('panel_member',$p_allocation['panel_1']); 
+	  $p2=find_panel_allocation_by_id('panel_member',$p_allocation['panel_2']); 
+	  $p3=find_panel_allocation_by_id('panel_member',$p_allocation['panel_3']); 
+	  $p4=find_panel_allocation_by_id('panel_member',$p_allocation['panel_4']); 
+	  $p5=find_panel_allocation_by_id('panel_member',$p_allocation['panel_5']); 	  
+	   
+  
+	  if(!$p_allocation){
+		$session->msg("d","Missing Panel Allocation ID.");
+		redirect('assign_draw.php');
+	  }
+?>
+
+<!----------------------------------------------------------------------------------------->
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<script type="text/javascript" src="libs/js/moment.min.js"></script>
+<script type="text/javascript">
+	function cancelData(){
+		  location.reload();
+	}
+
+    function readURL(input) {
+        if (input.files && input.files[0]) {
+            var reader = new FileReader();
+
+            reader.onload = function (e) {
+                $('#blah').attr('src', e.target.result);
+            }
+
+            reader.readAsDataURL(input.files[0]);
+        }
+    }
+	
+	//Delete Table Row
+	function deleteRow(btn) {
+	  var row = btn.parentNode.parentNode;
+	  row.parentNode.removeChild(row);
+	  
+	}
+	
+	//Insert Table row and data
+	function insertTableData(count,name,nic,designation,panel_id,work_place) {		
+		  var table = document.getElementById("data_list");
+		  var row = table.insertRow(count);	  
+		  
+		  var cell0 = row.insertCell(0);
+		  var cellCount =row.insertCell(1);
+		  var cell1 = row.insertCell(2);
+		  var cell2 = row.insertCell(3);
+		  var cell3 = row.insertCell(4);
+		  var cell4 = row.insertCell(5);	
+		  var cell5 = row.insertCell(6);			  
+		  
+		  cell0.innerHTML = "<input type='text' name='panel_"+count+"' id='panel_"+count+"' value='"+panel_id+"'  disabled='true' style='width:50%'> ";
+		  cellCount.innerHTML = count;
+		  cell1.innerHTML = name;
+		  cell2.innerHTML = nic;		  
+		  cell3.innerHTML = designation;
+		  cell4.innerHTML = work_place;
+		  cell5.innerHTML = "<button onclick='deleteRow(this);'>Remove</button>";
+		  
+		  document.getElementById('Panel_'+count).value=panel_id;
+		  //location.reload();
+    }
+	
+	//Validate already existing records/panel member
+	function containsObject(obj, list) {		
+		var i;		
+		
+		for (i = 0; i < list.length; i++) {
+			if (list[i].trim().toLowerCase() === obj.trim().toLowerCase()) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+	
+		
+	
+	//Search panel members from backend
+	$(document).ready(function(){	
+		
+		var url = document.URL;
+		var id = url.substring(url.lastIndexOf('=') + 1);		
+		document.getElementById('form_id').value=id;
+	 
+    $('.search-box input[type="text"]').on("keyup input", function(){
+        /* Get input value on change */
+        var inputVal = $(this).val();
+        var resultDropdown = $(this).siblings(".result");
+        if(inputVal.length){
+            $.get("backend-search.php", {term: inputVal}).done(function(data){
+                // Display the returned data in browser
+                resultDropdown.html(data);
+            });
+        } else{
+            resultDropdown.empty();
+        }
+    });
+    
+	const nic_list =[];
+	
+	//Function to get NIC values from table
+	function GetCellValues() {
+		var table = document.getElementById('data_list');
+		
+		for (var r = 1, n = table.rows.length; r < n; r++) {			
+			nic_list.push(table.rows[r].cells[3].innerHTML);			
+		}
+		return nic_list;
+	}
+	
+    // Set search input value on click of result item
+    $(document).on("click", ".result p", function(){		
+		var content=$(this).text();			
+		var pieces = content.split(";"); 
+		var panel_id=pieces[0];
+		var name=pieces[1];
+		var nic=pieces[2];		
+		var designation=pieces[4];
+		var work_place=pieces[3];
+		
+		var rowCount = document.getElementById('data_list').rows.length;
+		nic_list.length =0;
+		GetCellValues();
+		
+		
+		//To Add 5 Panel Members
+		if(rowCount < 6){
+			var contain=containsObject(nic,nic_list);
+			
+			if(!contain){
+				nic_list.push(nic);
+				insertTableData(rowCount,name,nic,designation,panel_id,work_place);
+			}else{
+				alert("Panel Member is already exist.");
+			}
+			
+		}else{
+			alert("Exceed the Maximum Panel Member Count.");
+		}
+		
+		$(this).parents(".search-box").find('input[type="text"]').val("");
+        $(this).parent(".result").empty();
+    });
+	
+	 
+	$('#submit').click(function(){   
+			var postURL = "/Digital_Draw/update_allocation.php";  
+			var i=1;  	
+           $.ajax({    
+                url:postURL,    
+                method:"POST",    
+                data:$('#add_name').serialize(),  
+                type:'json',  
+                success:function(data)    
+                { 
+				 
+                    i=1;                        
+                    $('#add_name')[0].reset();  
+                    alert('Record updated successfully.');  
+                }    
+           });    
+      });  
+  
+	
+});
+</script>
+
+<!--------------------------------------------------------------------------------------------->
+
+<?php include_once('layouts/header.php'); ?>
+<head>
+<meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/css/bootstrap.min.css">
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.4.1/js/bootstrap.min.js"></script>
+  </head>
+  <?php echo display_msg($msg); ?>
+  <div class="row">
+    <div class="panel panel-default">
+      <div class="panel-heading">
+        <strong>
+          <span class="glyphicon glyphicon-th"></span>
+          <span>Update Mahadhana Sampatha Digital  Draw - Panel Allocation </span>
+       </strong>
+      </div>
+      <div class="panel-body">
+	  <form action="edit_draw_allocation.php?id=<?php echo (int)$p_allocation['id'];?>" name="add_name" id="add_name" method = "POST">
+	  <div class="col-md-12">	
+	  
+	  
+	  <label>Mode</label><br>	
+		<table class="table" style="width:50%;background:#bebebe;">
+		<thead>
+		<tr>
+        <th>
+		<input type="radio" id="test" name="mode" value="Test" <?php echo ($mode=='Test')?'checked':'' ?>>
+					  <label for="test">Test</label><br>
+		</th>
+        <th><input type="radio" id="live" name="mode" value="Live" <?php echo ($mode=='Live')?'checked':'' ?>>
+					  <label for="live">Live</label><br></th>
+		</tr>
+		</thead>
+		</table>
+			
+	  </div>
+			<div class="col-md-3">          
+				<div class="form-group">
+					<label for="lottery-name">Lottery</label>
+					<select class="form-control" id="lottery-name" name="lottery-name">                      
+                    <?php  foreach ($all_categories as $cat): ?>
+                      <option value="<?php echo (int)$cat['id'] ?>" >
+                        <?php echo $cat['lottery_name'] ?></option>
+                    <?php endforeach; ?>
+                    </select>	
+				</div>
+			</div>
+			
+			<div class="col-md-3">
+				<div class="form-group">
+					<label for="draw_date">Draw Date</label>
+					<input type="text" style="text-align:left" class="datepicker form-control" name="draw_date"  id="draw_date"placeholder="Draw Date" value="<?php echo remove_junk(ucwords($p_allocation['draw_date'])); ?>">
+				</div>
+            </div>
+			<div class="col-md-3">
+				<div class="form-group">
+				  <label for="draw_no">Draw No</label>
+					 <input class="form-control" name="draw_no" id="draw_no" placeholder="Draw No"  type="number" value="<?php echo remove_junk(ucwords($p_allocation['draw_no'])); ?>">
+				</div>
+			</div>
+			<div class="col-md-3">
+				<div class="form-group">
+				  <label for="operator">Operator</label>
+					 <input class="form-control" name="operator" type="text" value="<?php echo remove_junk(ucwords($p_allocation['operator'])); ?>">
+				</div>
+			</div>
+			
+			
+		
+			<div class="col-md-12">		
+			<div class="row" style="background:#A3E4D7;text-align:center;">
+				<label for="hm_tp">Search Panel Members</label>				
+			</div>
+			<div class="form-group">
+				<div class="row">			
+					<div class="col-md-4">
+						<div class="search-box">
+						Name/NIC
+						<input type="text" id="sug_nic" class="form-control" name="sug_nic"  autocomplete="off" placeholder="Search Panel Member...">
+						<div class="result"></div>
+						</div>
+					</div>
+					<div class="col-md-4">
+						<br>
+						<button type="button" name="search" class="btn btn-primary">Search & Add Panel Member</button>
+					</div>
+					
+				</div>
+            
+		</div>
+		
+		<div class="col-md-12">	
+			<div class="row" style="background:#A3E4D7;text-align:center;">
+				<label for="hm_tp"><b>Draw Panel</b></label>								
+			</div>
+			
+			<div id="winner_report" name="winner_report">
+			<br>
+			<?php $r_count=1; ?>
+			<table class="table table-bordered" style="padding-top:10px;" id="data_list" name="data_list">
+				<colgroup>									
+					<col span="1" style="visibility: collapse">
+					<col span="6">
+				 </colgroup>
+				<thead>
+					
+					<th style="width=5%;">ID</th>
+					<th style="width=5%;">#</th>					
+					<th style="text-align:center;width=20%">Name</th>					
+					<th style="text-align:center;width=15%">NIC</th>					
+					<th style="text-align:center;width=25%">Designation</th>	
+					<th style="text-align:center;width=20%">Workplace</th>					
+					<th style="text-align:center;width=10%">Action</th>
+				</thead>
+				
+				
+				<tr>				
+					<td style="width=5%;"><?php echo remove_junk(ucwords($p1['id'])); ?></td>
+					<td style="width=5%;"><?php echo $r_count++; ?></td>					
+					<td style="text-align:left;width=20%"><?php echo remove_junk(ucwords($p1['member_name'])); ?></td>					
+					<td style="text-align:left;width=15%"><?php echo remove_junk(ucwords($p1['nic'])); ?></td>					
+					<td style="text-align:left;width=25%"><?php echo remove_junk(ucwords($p1['designation'])); ?></td>	
+					<td style="text-align:left;width=20%"><?php echo remove_junk(ucwords($p1['work_place'])); ?></td>					
+					<td style="text-align:left;width=10%"><button onclick='deleteRow(this,<?php echo remove_junk(ucwords($p1['id'])); ?>);'>Remove</button></td>
+				</tr>
+				
+				<tr>				
+					<td style="width=5%;"><?php echo remove_junk(ucwords($p2['id'])); ?></td>
+					<td style="width=5%;"><?php echo $r_count++; ?></td>					
+					<td style="text-align:left;width=20%"><?php echo remove_junk(ucwords($p2['member_name'])); ?></td>					
+					<td style="text-align:left;width=15%"><?php echo remove_junk(ucwords($p2['nic'])); ?></td>					
+					<td style="text-align:left;width=25%"><?php echo remove_junk(ucwords($p2['designation'])); ?></td>	
+					<td style="text-align:left;width=20%"><?php echo remove_junk(ucwords($p2['work_place'])); ?></td>					
+					<td style="text-align:left;width=10%"><button onclick='deleteRow(this);'>Remove</button></td>
+				</tr>
+				
+				<tr>				
+					<td style="width=5%;"><?php echo remove_junk(ucwords($p3['id'])); ?></td>
+					<td style="width=5%;"><?php echo $r_count++; ?></td>					
+					<td style="text-align:left;width=20%"><?php echo remove_junk(ucwords($p3['member_name'])); ?></td>					
+					<td style="text-align:left;width=15%"><?php echo remove_junk(ucwords($p3['nic'])); ?></td>					
+					<td style="text-align:left;width=25%"><?php echo remove_junk(ucwords($p3['designation'])); ?></td>	
+					<td style="text-align:left;width=20%"><?php echo remove_junk(ucwords($p3['work_place'])); ?></td>					
+					<td style="text-align:left;width=10%"><button onclick='deleteRow(this);'>Remove</button></td>
+				</tr>
+				
+				<tr>				
+					<td style="width=5%;"><?php echo remove_junk(ucwords($p4['id'])); ?></td>
+					<td style="width=5%;"><?php echo $r_count++; ?></td>					
+					<td style="text-align:left;width=20%"><?php echo remove_junk(ucwords($p4['member_name'])); ?></td>					
+					<td style="text-align:left;width=15%"><?php echo remove_junk(ucwords($p4['nic'])); ?></td>					
+					<td style="text-align:left;width=25%"><?php echo remove_junk(ucwords($p4['designation'])); ?></td>	
+					<td style="text-align:left;width=20%"><?php echo remove_junk(ucwords($p4['work_place'])); ?></td>					
+					<td style="text-align:left;width=10%"><button onclick='deleteRow(this);'>Remove</button></td>
+				</tr>
+				
+				<tr>				
+					<td style="width=5%;"><?php echo remove_junk(ucwords($p5['id'])); ?></td>
+					<td style="width=5%;"><?php echo $r_count++; ?></td>					
+					<td style="text-align:left;width=20%"><?php echo remove_junk(ucwords($p5['member_name'])); ?></td>					
+					<td style="text-align:left;width=15%"><?php echo remove_junk(ucwords($p5['nic'])); ?></td>					
+					<td style="text-align:left;width=25%"><?php echo remove_junk(ucwords($p5['designation'])); ?></td>	
+					<td style="text-align:left;width=20%"><?php echo remove_junk(ucwords($p5['work_place'])); ?></td>					
+					<td style="text-align:left;width=10%"><button onclick='deleteRow(this);'>Remove</button></td>
+				</tr>
+			</table>
+			</div>
+			
+			<div id="result" name="result" style="display:none;">
+			<input type="text" id="Panel_1" name="Panel_1" value="<?php echo remove_junk(ucwords($p1['id'])) ?>"><br>
+			<input type="text" id="Panel_2" name="Panel_2" value="<?php echo remove_junk(ucwords($p2['id'])) ?>"><br>
+			<input type="text" id="Panel_3" name="Panel_3" value="<?php echo remove_junk(ucwords($p3['id'])) ?>"><br>
+			<input type="text" id="Panel_4" name="Panel_4" value="<?php echo remove_junk(ucwords($p4['id'])) ?>"><br>
+			<input type="text" id="Panel_5" name="Panel_5" value="<?php echo remove_junk(ucwords($p5['id'])) ?>"><br>	
+			<input type="text" id="form_id" name="form_id" value=""><br>			
+			</div>			
+					
+			<div class="col-md-4">
+						<br>
+						<button type="submit" name="submit" id="submit" class="btn btn-primary" style="width:100px;" >Update</button>
+						<button type="button" name="cancel" id="cancel" class="btn btn-primary" style="width:100px;" onclick="cancelData()">Cancel</button>
+			</div>	
+			
+		</div>
+		</div>
+        </form>
+      </div>
+
+    </div>
+  </div>
+
+<?php include_once('layouts/footer.php'); ?>

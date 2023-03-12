@@ -1,0 +1,105 @@
+<?php
+  $page_title = 'Edit panel';
+  require_once('includes/load.php');
+  // Checkin What level user has permission to view this page
+  page_require_level(1);
+?>
+<?php
+  //Display all catgories.
+  $panel = find_by_id('panel_member',(int)$_GET['id']);
+  if(!$panel){
+    $session->msg("d","Missing panel id.");
+    redirect('panel.php');
+  }
+?>
+
+<?php
+if(isset($_POST['edit_cat'])){
+  $req_field = array('categorie-name');
+  validate_fields($req_field);
+  $cat_name = remove_junk($db->escape($_POST['categorie-name']));
+  if(empty($errors)){
+        $sql = "UPDATE panel_member SET name='{$cat_name}'";
+       $sql .= " WHERE id='{$panel['id']}'";
+     $result = $db->query($sql);
+     if($result && $db->affected_rows() === 1) {
+       $session->msg("s", "Successfully updated panel");
+       redirect('panel.php',false);
+     } else {
+       $session->msg("d", "Sorry! Failed to Update");
+       redirect('panel.php',false);
+     }
+  } else {
+    $session->msg("d", $errors);
+    redirect('panel.php',false);
+  }
+}
+?>
+<?php include_once('layouts/header.php'); ?>
+
+<div class="row">
+   <div class="col-md-12">
+     <?php echo display_msg($msg); ?>
+   </div>
+   <div class="col-md-5">
+     <div class="panel panel-default">
+       
+       <div class="panel-body">
+         <form method="post" action="edit_panel.php?id=<?php echo (int)$panel['id'];?>">
+		    <div class="col-md-6">          
+				<div class="form-group">
+					<label for="member_name">Full Name</label>
+					<input type="text" class="form-control" name="member_name" value="<?php echo remove_junk(ucfirst($panel['member_name']));?>">
+				</div>
+				<div class="form-group">
+					<label for="nic">NIC</label>
+					<input type="text" class="form-control" name="nic" value="<?php echo remove_junk(ucfirst($panel['nic']));?>">
+				</div> 
+				<div class="form-group">
+				  <label for="hm_tp">Home Telephone No</label>
+					 <input type="text" class="form-control" name="hm_tp" value="<?php echo remove_junk(ucfirst($panel['hm_tp']));?>">
+				</div>			
+				<div class="form-group">
+				  <label for="email">Email</label>
+					 <input type="text" class="form-control" name="email" value="<?php echo remove_junk(ucfirst($panel['email']));?>">
+				</div>
+				<div class="form-group">
+				  <label for="photo">Profile Image</label>               
+					<input type = "file" name = "photo" style=" border: 1px solid blue;" placeholder="select image">
+				</div>
+				<div class="form-group clearfix">
+				  <button type="submit" name="add_user" class="btn btn-primary">Add User</button>
+				</div>
+			</div>
+		
+			<div class="col-md-6">
+				<div class="form-group">
+					<label for="designation">Current Designation</label>
+					<input type="text" class="form-control" name ="designation"  value="<?php echo remove_junk(ucfirst($panel['designation']));?>">
+				</div>
+				<div class="form-group">
+				  <label for="work_place">Working Place</label>
+					 <input type="text" class="form-control" name="work_place" value="<?php echo remove_junk(ucfirst($panel['work_place']));?>">
+				</div>
+				<div class="form-group">
+				  <label for="mobile_no">Mobile No</label>
+					 <input type="text" class="form-control" name="mobile_no" value="<?php echo remove_junk(ucfirst($panel['mobile_no']));?>">
+				</div>
+				<div class="form-group">
+				  <label for="status">Status</label>
+					<select class="form-control" name="level">  
+					   <option value="1"<?php if ($panel['status'] == '1') echo ' selected="selected"'; ?>>Active</option>
+					   <option value="0"<?php if ($panel['status'] == '0') echo ' selected="selected"'; ?>>Inactive</option>
+				   </select>
+				</div>
+			</div>		   
+           <button type="submit" name="edit_cat" class="btn btn-primary">Update panel</button>
+       </form>
+       </div>
+     </div>
+   </div>
+</div>
+
+
+
+<?php include_once('layouts/footer.php'); ?>
