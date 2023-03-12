@@ -1,0 +1,150 @@
+
+function suggetion() {
+
+     $('#sug_input').keyup(function(e) {
+
+         var formData = {
+             'product_name' : $('input[name=title]').val()
+         };
+
+         if(formData['product_name'].length >= 1){
+
+           // process the form
+           $.ajax({
+               type        : 'POST',
+               url         : 'ajax.php',
+               data        : formData,
+               dataType    : 'json',
+               encode      : true
+           })
+               .done(function(data) {
+                   //console.log(data);
+                   $('#result').html(data).fadeIn();
+                   $('#result li').click(function() {
+
+                     $('#sug_input').val($(this).text());
+                     $('#result').fadeOut(500);
+
+                   });
+
+                   $("#sug_input").blur(function(){
+                     $("#result").fadeOut(500);
+                   });
+
+               });
+
+         } else {
+
+           $("#result").hide();
+
+         };
+
+         e.preventDefault();
+     });
+
+ }
+  $('#sug-form').submit(function(e) {
+      var formData = {
+          'p_name' : $('input[name=title]').val()
+      };
+        // process the form
+        $.ajax({
+            type        : 'POST',
+            url         : 'ajax.php',
+            data        : formData,
+            dataType    : 'json',
+            encode      : true
+        })
+            .done(function(data) {
+                //console.log(data);
+                $('#product_info').html(data).show();
+                total();
+                $('.datePicker').datepicker('update', new Date());
+
+            }).fail(function() {
+                $('#product_info').html(data).show();
+            });
+      e.preventDefault();
+  });
+  function total(){
+    $('#product_info input').change(function(e)  {
+            var price = +$('input[name=price]').val() || 0;
+            var qty   = +$('input[name=quantity]').val() || 0;
+            var total = qty * price ;
+                $('input[name=total]').val(total.toFixed(2));
+    });
+  }
+  
+  
+  function searchPosts( loadedResults ){  
+      
+    var query = document.getElementById( "search_input" ).value;  
+      
+    var resultsContainer = document.getElementById( "search_results" );  
+      
+    // clear results container if no previous results have been loaded  
+    if( loadedResults === 0 ){  
+        resultsContainer.innerHTML = "";  
+    }  
+      
+    // create XMLHttpRequest object  
+    var xmlhttp = new XMLHttpRequest();  
+      
+    // create function that is called when request is completed  
+    xmlhttp.onreadystatechange = function() {  
+        if ( xmlhttp.readyState === 4 && xmlhttp.status === 200 ) {  
+            // fetch response text   
+            var response=xmlhttp.responseText;  
+            var outputPosts;   
+               
+            // parse response if it is valid JSON  
+            try{  
+                outputPosts = JSON.parse( response );  
+            }  
+            catch( e ){  
+                return;  
+            }  
+              
+            // iterate over results  
+            for( var i = 0; i < outputPosts.length; i++ ){  
+                // append result to result container, link to url of post  
+                resultsContainer.innerHTML += "<div id='result_" + i + "'><a href='http://" + outputPosts[ i ].url + "'><h3>" + outputPosts[ i ].title + "</h3>" + outputPosts[ i ].description + "</a><div>";  
+            }  
+            // add button to load more results starting from the last loaded result (remove any existing button first if one exists)  
+            try{  
+                document.getElementById( "load_button" ).remove();  
+            }  
+            catch( e ){  
+                return;  
+            }  
+            finally{  
+                resultsContainer.innerHTML += "<br><button id='load_button' onclick='searchPosts( " + ( loadedResults + outputPosts.length ) + " )'>Load more</button>";  
+            }  
+        }  
+    };  
+      
+    // send request to fetch searchDB.php  
+    xmlhttp.open( "GET", "searchDB.php?search=" + query + "&loaded=" + loadedResults, true );  
+    xmlhttp.send();  
+}
+
+  $(document).ready(function() {
+
+    //tooltip
+    $('[data-toggle="tooltip"]').tooltip();
+
+    $('.submenu-toggle').click(function () {
+       $(this).parent().children('ul.submenu').toggle(200);
+    });
+    //suggetion for finding product names
+    suggetion();
+    // Callculate total ammont
+    total();
+
+    $('.datepicker')
+        .datepicker({
+            format: 'yyyy-mm-dd',
+            todayHighlight: true,
+            autoclose: true
+        });
+  });
